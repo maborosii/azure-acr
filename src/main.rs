@@ -39,7 +39,9 @@ async fn main() -> Result<()> {
         )
         .await;
         match image_list {
-            anyhow::Result::Ok(images) => deliver_image_name(images.repositories(), tx).await,
+            anyhow::Result::Ok(images) => {
+                deliver_image_name(images.filter_image_name_by_mark("/").repositories(), tx).await
+            }
             Err(e) => println!("get image list err, message: {}", e),
         }
     });
@@ -70,8 +72,8 @@ async fn main() -> Result<()> {
                         let b = a
                             .filter_tag_by_mark("stable")
                             .filter_tag_by_mark("latest")
-                            .sort_by_tag_createdtime_desc();
-                        // .filter_tag_by_place(3);
+                            .sort_by_tag_createdtime_desc()
+                            .filter_tag_by_place(3);
 
                         println!("{:?}", b)
                     }

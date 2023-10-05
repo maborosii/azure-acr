@@ -6,7 +6,7 @@ use std::{fs, path::Path};
 pub struct Config {
     azure: AzureAuth,
     acr: AcrAuth,
-    filter: Option<ImageFilter>,
+    filter: Option<Filter>,
 }
 
 impl Config {
@@ -42,13 +42,24 @@ pub struct AcrAuth {
 }
 
 #[derive(Deserialize)]
-pub struct ImageFilter {
+pub struct Filter {
+    image_name: ImageRule,
+    tag: TagRule,
+}
+
+#[derive(Deserialize)]
+pub struct ImageRule {
+    keep: KeepRule,
+}
+
+#[derive(Deserialize)]
+pub struct TagRule {
     keep: KeepRule,
 }
 
 #[derive(Deserialize)]
 pub struct KeepRule {
-    default: DefaultRule,
+    default: Option<DefaultRule>,
     rules: Option<Vec<Rule>>,
 }
 
@@ -57,6 +68,13 @@ pub struct DefaultRule {
     num: usize,
 }
 
+#[cfg(not(debug_assertions))]
+#[derive(Deserialize)]
+pub struct Rule {
+    keyword: String,
+}
+
+#[cfg(debug_assertions)]
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct Rule {
     keyword: String,
@@ -75,36 +93,47 @@ mod tests {
         image_manager_id = "image_manager_id"
         image_manager_pwd = "image_manager_pwd"
         endpoint = "endpoint"
-        # tag filter
-        [filter.keep]
-        default.num = 32
-        [[filter.keep.rules]]
-        keyword = "stable"
-        [[filter.keep.rules]]
+        # image name filter
+        [[filter.image_name.keep.rules]]
         keyword = "/"
-        [[filter.keep.rules]]
+        
+        # tag filter
+        [filter.tag.keep]
+        default.num = 20
+        [[filter.tag.keep.rules]]
+        keyword = "stable"
+        [[filter.tag.keep.rules]]
         keyword = "latest"
+
         "#;
         let config: Config = toml::from_str(str_keep_rule).unwrap();
-        let keep_rule = &config.filter.unwrap();
+        let filter_rule = &config.filter.unwrap();
+        let image_keep_rule = &filter_rule.image_name.keep;
+        let tag_keep_rule = &filter_rule.tag.keep;
         assert_eq!(config.azure.tenant_id, "tenant_id");
         assert_eq!(config.acr.image_manager_id, "image_manager_id");
         assert_eq!(config.acr.image_manager_pwd, "image_manager_pwd");
         assert_eq!(config.acr.endpoint, "endpoint");
-        assert_eq!(keep_rule.keep.default.num, 32);
+
+        let tag_keep_rule_default = tag_keep_rule.default.as_ref().unwrap();
+
+        assert_eq!(tag_keep_rule_default.num, 20);
         assert_eq!(
-            keep_rule.keep.rules,
+            tag_keep_rule.rules,
             Some(vec![
                 Rule {
                     keyword: "stable".to_string()
                 },
                 Rule {
-                    keyword: "/".to_string()
-                },
-                Rule {
                     keyword: "latest".to_string()
                 }
             ])
-        )
+        );
+        assert_eq!(
+            image_keep_rule.rules,
+            Some(vec![Rule {
+                keyword: "/".to_string()
+            }])
+        );
     }
 }

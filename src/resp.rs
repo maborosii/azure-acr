@@ -1,7 +1,7 @@
 use crate::datetime_format;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
-use std::{cmp::Ordering, collections::HashSet};
+use std::collections::HashSet;
 
 pub trait Token {
     fn token(&self) -> String;
@@ -56,6 +56,15 @@ impl RepositoriesList {
     pub fn repositories(self) -> Vec<String> {
         self.repositories
     }
+    pub fn filter_image_name_by_mark(mut self, mark: &str) -> Self {
+        let filter_list: Vec<_> = self
+            .repositories
+            .into_iter()
+            .filter(|x| !x.clone().contains(mark))
+            .collect();
+        self.repositories = filter_list;
+        self
+    }
 }
 
 #[derive(Deserialize, Debug, PartialEq)]
@@ -67,7 +76,7 @@ pub struct TagList {
 }
 
 impl TagList {
-    // get delete digest of tag list
+    // get digest of tag list for deleting
     pub fn sort_by_tag_createdtime_desc(mut self) -> Self {
         self.tags
             .sort_by(|a, b| b.created_time.cmp(&a.created_time));
