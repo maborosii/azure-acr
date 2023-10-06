@@ -9,7 +9,7 @@ use acr::{
 use anyhow::Result;
 use serde::de::DeserializeOwned;
 use std::{fmt::Debug, sync::Arc, thread, time::Duration};
-// use tokio:`:join;
+use tokio::join;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -46,56 +46,60 @@ async fn main() -> Result<()> {
         }
     });
 
-    loop {
-        match rx.try_recv() {
-            anyhow::Result::Ok(image_name) => {
-                println!("receiving image_name...{:?}", &image_name);
-                let tag_list_refresh_token = refresh_token.clone();
-                let tag_list_client = client.clone();
-                let tag_scope = build_tag_scope(&image_name);
-                let tag_path = build_tag_path(&image_name);
-                let tag_list_config = config.clone();
-                let _ = tokio::spawn(async move {
-                    let demo = get_data::<TagList>(
-                        tag_list_refresh_token.clone(),
-                        tag_list_config,
-                        tag_list_client,
-                        &tag_scope,
-                        &tag_path,
-                    )
+    let tag_list_task = tokio::spawn(async move {
+        loop {
+            match rx.try_recv() {
+                anyhow::Result::Ok(image_name) => {
+                    println!("receiving image_name...{:?}", &image_name);
+                    let tag_list_refresh_token = refresh_token.clone();
+                    let tag_list_client = client.clone();
+                    let tag_scope = build_tag_scope(&image_name);
+                    let tag_path = build_tag_path(&image_name);
+                    let tag_list_config = config.clone();
+                    let _ = tokio::spawn(async move {
+                        let tmp_tag_list = get_data::<TagList>(
+                            tag_list_refresh_token.clone(),
+                            tag_list_config,
+                            tag_list_client,
+                            &tag_scope,
+                            &tag_path,
+                        )
+                        .await;
+                        if let Err(e) = tmp_tag_list {
+                            println!("{}", e);
+                        // !TODO
+                        } else {
+                            let a = tmp_tag_list.unwrap();
+                            let b = a
+                                .filter_tag_by_mark("stable")
+                                .filter_tag_by_mark("latest")
+                                .sort_by_tag_createdtime_desc()
+                                .filter_tag_by_place(20);
+                            println!("{:?}", b)
+                        }
+                        // !
+                    })
                     .await;
-                    if let Err(e) = demo {
-                        println!("{}", e);
-                    // !TODO
-                    } else {
-                        let a = demo.unwrap();
-                        let b = a
-                            .filter_tag_by_mark("stable")
-                            .filter_tag_by_mark("latest")
-                            .sort_by_tag_createdtime_desc()
-                            .filter_tag_by_place(3);
-
-                        println!("{:?}", b)
-                    }
-                    // !
-                })
-                .await;
-            }
-            Err(crossbeam_channel::TryRecvError::Empty) => {
-                println!("the channel is empty, continue listening...");
-                thread::sleep(Duration::from_secs(1));
-            }
-            Err(crossbeam_channel::TryRecvError::Disconnected) => {
-                println!("the channel is closed, loop exitting");
-                break;
+                }
+                Err(crossbeam_channel::TryRecvError::Empty) => {
+                    println!("the channel is empty, continue listening...");
+                    thread::sleep(Duration::from_secs(1));
+                }
+                Err(crossbeam_channel::TryRecvError::Disconnected) => {
+                    println!("the channel is closed, loop exitting");
+                    break;
+                }
             }
         }
-    }
+    });
 
-    repo_list_task.await.unwrap();
-    // join!(repo_list_task);
-    // get repo list
-    anyhow::Ok(())
+    // repo_list_task.await.unwrap();
+    let (repo_list_result, tag_list_result) = join!(repo_list_task, tag_list_task);
+    match (repo_list_result, tag_list_result) {
+        (Ok(_), Ok(_)) => anyhow::Ok(()),
+        (Err(repo_err), _) => Err(anyhow::anyhow!("get repo list err: {}", repo_err)),
+        (_, Err(tag_err)) => Err(anyhow::anyhow!("get tag list err: {}", tag_err)),
+    }
 }
 
 fn config() -> Result<setting::Config> {

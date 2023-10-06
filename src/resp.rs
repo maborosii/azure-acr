@@ -95,7 +95,9 @@ impl TagList {
     }
     pub fn filter_tag_by_place(mut self, hold: usize) -> Self {
         if self.tags.len() > hold {
-            self.tags = self.tags[0..hold].to_vec();
+            self.tags = self.tags[hold..self.tags.len()].to_vec();
+        } else {
+            self.tags = vec![];
         }
         self
     }

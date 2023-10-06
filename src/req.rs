@@ -5,6 +5,7 @@ use crate::{
 };
 use anyhow::Result;
 use async_trait::async_trait;
+use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
 use std::{fmt::Debug, sync::Arc};
 
@@ -148,6 +149,7 @@ impl RefreshToken {
 }
 
 impl FinalToken {
+    // get data
     pub async fn get_final_data<T>(
         &self,
         config: &crate::setting::Config,
@@ -171,5 +173,28 @@ impl FinalToken {
 
         // println!("body = {:?}", body);
         Ok(body)
+    }
+}
+
+impl FinalToken {
+    // delete data
+    pub async fn delete_image_by_tag(
+        &self,
+        config: &crate::setting::Config,
+        client: Arc<reqwest::Client>,
+        path: &str,
+    ) -> Result<StatusCode> {
+        let catalog_url = format!("https://{}{}", config.azure_acr_endpoint(), path);
+        let authorization = format!("Bearer {}", self.token());
+
+        let http_status = client
+            .delete(catalog_url)
+            .query(&[("api-version", AZURE_ACR_API_VERSION)])
+            .header("Authorization", authorization)
+            .send()
+            .await?
+            .status();
+
+        Ok(http_status)
     }
 }
