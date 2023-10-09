@@ -1,6 +1,12 @@
 use anyhow::Result;
 use serde::Deserialize;
 use std::{fs, path::Path};
+use utils::get_default_config;
+
+pub fn config() -> Result<Config> {
+    let config_file = get_default_config("config.toml").unwrap();
+    Config::load(config_file)
+}
 
 #[derive(Deserialize)]
 pub struct Config {

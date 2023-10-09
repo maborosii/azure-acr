@@ -1,6 +1,6 @@
 use crossbeam_channel::Sender;
+use requester::TagList;
 
-use crate::resp::TagList;
 pub async fn deliver_image_name(image_list: Vec<String>, sender: Sender<String>) {
     for image in image_list.into_iter() {
         let s_clone = sender.clone();
