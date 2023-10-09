@@ -1,1 +1,2 @@
-pub mod worker;
+mod worker;
+pub use worker::*;

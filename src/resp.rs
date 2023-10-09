@@ -1,7 +1,8 @@
-use crate::datetime_format;
+use crate::{datetime_format, setting::Config};
+use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
-use std::collections::HashSet;
+use std::{collections::HashSet, sync::Arc};
 
 pub trait Token {
     fn token(&self) -> String;
@@ -69,10 +70,10 @@ impl RepositoriesList {
 
 #[derive(Deserialize, Debug, PartialEq)]
 pub struct TagList {
-    registry: String,
+    pub registry: String,
     #[serde(rename(deserialize = "imageName"))]
-    image_name: String,
-    tags: Vec<Tag>,
+    pub image_name: String,
+    pub tags: Vec<Tag>,
 }
 
 impl TagList {
@@ -95,21 +96,55 @@ impl TagList {
     }
     pub fn filter_tag_by_place(mut self, hold: usize) -> Self {
         if self.tags.len() > hold {
-            self.tags = self.tags[hold..self.tags.len()].to_vec();
+            self.tags = self.tags[hold..].to_vec();
         } else {
             self.tags = vec![];
         }
         self
     }
+    pub fn filter_by_tag_rule(mut self, config: Arc<Config>) -> Result<Self> {
+        match &config.filter {
+            None => Err(anyhow::anyhow!("config filter rules is none")),
+            Some(filter) => {
+                let rule = &filter.tag.keep;
+                let keep_default = &rule.default;
+                let keep_rule = &rule.rules;
+                match (keep_default, keep_rule) {
+                    (None, None) => Err(anyhow::anyhow!("tag filter rules is none")),
+                    (None, Some(rules)) => {
+                        for i in rules {
+                            self = self.filter_tag_by_mark(i.keyword.as_str());
+                        }
+                        Ok(self)
+                    }
+                    (Some(hold), None) => {
+                        self = self
+                            .sort_by_tag_createdtime_desc()
+                            .filter_tag_by_place(hold.num);
+                        Ok(self)
+                    }
+                    (Some(hold), Some(rules)) => {
+                        for i in rules {
+                            self = self.filter_tag_by_mark(i.keyword.as_str());
+                        }
+                        self = self
+                            .sort_by_tag_createdtime_desc()
+                            .filter_tag_by_place(hold.num);
+                        Ok(self)
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[derive(Deserialize, Debug, PartialEq, PartialOrd, Clone)]
 pub struct Tag {
-    name: String,
-    digest: String,
+    pub name: String,
+    pub digest: String,
 
     #[serde(rename(deserialize = "createdTime"), with = "datetime_format")]
-    created_time: DateTime<Utc>,
+    pub created_time: DateTime<Utc>,
 }
 
 #[cfg(test)]

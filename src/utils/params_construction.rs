@@ -1,3 +1,10 @@
+pub fn build_repos_scope() -> String {
+    "registry:catalog:*".to_string()
+}
+pub fn build_repos_path() -> String {
+    "/acr/v1/_catalog".to_string()
+}
+
 pub fn build_tag_scope(registry: &str) -> String {
     format!("repository:{}:metadata_read", registry)
 }

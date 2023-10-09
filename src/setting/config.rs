@@ -6,7 +6,7 @@ use std::{fs, path::Path};
 pub struct Config {
     azure: AzureAuth,
     acr: AcrAuth,
-    filter: Option<Filter>,
+    pub filter: Option<Filter>,
 }
 
 impl Config {
@@ -43,41 +43,41 @@ pub struct AcrAuth {
 
 #[derive(Deserialize)]
 pub struct Filter {
-    image_name: ImageRule,
-    tag: TagRule,
+    pub image_name: ImageRule,
+    pub tag: TagRule,
 }
 
 #[derive(Deserialize)]
 pub struct ImageRule {
-    keep: KeepRule,
+    pub keep: KeepRule,
 }
 
 #[derive(Deserialize)]
 pub struct TagRule {
-    keep: KeepRule,
+    pub keep: KeepRule,
 }
 
 #[derive(Deserialize)]
 pub struct KeepRule {
-    default: Option<DefaultRule>,
-    rules: Option<Vec<Rule>>,
+    pub default: Option<DefaultRule>,
+    pub rules: Option<Vec<Rule>>,
 }
 
 #[derive(Deserialize)]
 pub struct DefaultRule {
-    num: usize,
+    pub num: usize,
 }
 
 #[cfg(not(debug_assertions))]
 #[derive(Deserialize)]
 pub struct Rule {
-    keyword: String,
+    pub keyword: String,
 }
 
 #[cfg(debug_assertions)]
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct Rule {
-    keyword: String,
+    pub keyword: String,
 }
 
 #[cfg(test)]
