@@ -4,12 +4,6 @@ mod setting;
 pub use req::*;
 pub use resp::*;
 pub use setting::*;
-// pub mod setting;
-// pub use utils::{
-//     build_delete_tag_path, build_delete_tag_scope, build_repos_path, build_repos_scope,
-//     build_tag_path, build_tag_scope, datetime_format, get_config_file, get_default_config,
-// };
-// pub use workflow::{deliver_image_name, deliver_tag_list};
 
 pub const LOGIN_URL: &str = "https://login.microsoftonline.com";
 

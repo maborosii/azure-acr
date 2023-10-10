@@ -9,6 +9,7 @@ use utils::datetime_format;
 pub trait Token {
     fn token(&self) -> String;
 }
+// start place for chain caller
 pub struct Primary;
 
 impl Token for Primary {
@@ -16,6 +17,8 @@ impl Token for Primary {
         "".to_string()
     }
 }
+
+// the first resp for login azure
 #[derive(Deserialize, Debug)]
 pub struct LoginToken {
     // token_type: String,
@@ -29,6 +32,7 @@ impl Token for LoginToken {
     }
 }
 
+// the second resp for get refresh token
 #[derive(Deserialize, Debug)]
 pub struct RefreshToken {
     refresh_token: String,
@@ -40,6 +44,7 @@ impl Token for RefreshToken {
     }
 }
 
+// the third resp for last req（real req）
 #[derive(Deserialize, Debug)]
 pub struct FinalToken {
     access_token: String,
@@ -51,6 +56,7 @@ impl Token for FinalToken {
     }
 }
 
+// repo list
 #[derive(Deserialize, Debug)]
 pub struct RepositoriesList {
     repositories: Vec<String>,
@@ -59,6 +65,7 @@ impl RepositoriesList {
     pub fn repositories(self) -> Vec<String> {
         self.repositories
     }
+    // filter image name which is not container `mark`
     pub fn filter_image_name_by_mark(mut self, mark: &str) -> Self {
         let filter_list: Vec<_> = self
             .repositories
@@ -70,6 +77,7 @@ impl RepositoriesList {
     }
 }
 
+// tag list
 #[derive(Deserialize, Debug, PartialEq)]
 pub struct TagList {
     pub registry: String,
@@ -79,12 +87,13 @@ pub struct TagList {
 }
 
 impl TagList {
-    // get digest of tag list for deleting
+    // sort order by tag's created time desc
     pub fn sort_by_tag_createdtime_desc(mut self) -> Self {
         self.tags
             .sort_by(|a, b| b.created_time.cmp(&a.created_time));
         self
     }
+    // filter tags name which is containing `mark` by its digest
     pub fn filter_tag_by_mark(mut self, mark: &str) -> Self {
         // get digest list
         let manifests_list: HashSet<_> = self
@@ -96,6 +105,7 @@ impl TagList {
         self.tags.retain(|x| !manifests_list.contains(&x.digest));
         self
     }
+    // filter tags which is in tag list's [0..`hold`]
     pub fn filter_tag_by_place(mut self, hold: usize) -> Self {
         if self.tags.len() > hold {
             self.tags = self.tags[hold..].to_vec();
@@ -104,6 +114,7 @@ impl TagList {
         }
         self
     }
+    // aggregate filter rules by config
     pub fn filter_by_tag_rule(mut self, config: Arc<Config>) -> Result<Self> {
         match &config.filter {
             None => Err(anyhow::anyhow!("config filter rules is none")),

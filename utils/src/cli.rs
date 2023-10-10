@@ -1,6 +1,9 @@
 use anyhow::Result;
 use std::path::{Path, PathBuf};
 
+/*
+    get config for file
+*/
 pub fn get_config_file(s: &str) -> Result<PathBuf> {
     let path = Path::new(s);
     if path.exists() {
