@@ -1,27 +1,21 @@
-use acr::workflow::{create_delete_tag_list_task, create_repo_list_task, create_tag_list_task};
+use acr::workflow::{
+    create_delete_tag_list_task, create_refresh_token_task, create_repo_list_task,
+    create_tag_list_task,
+};
 use anyhow::Result;
-use requester::{config, Primary, Sender};
+use requester::load_config;
 use std::sync::Arc;
 use tokio::join;
 use utils::{build_repos_path, build_repos_scope};
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let config = Arc::new(load_config().unwrap());
     let client = Arc::new(reqwest::Client::new());
-    let config = Arc::new(config().unwrap());
-    let start_point = Primary;
-
-    // get refresh token
-    let refresh_token = Arc::new(
-        start_point
-            .send(&config, client.clone())
-            .await?
-            .send(&config, client.clone())
-            .await?,
-    );
-
     let (repo_tx, repo_rx) = crossbeam_channel::unbounded();
     let (tag_tx, tag_rx) = crossbeam_channel::unbounded();
+
+    let refresh_token = Arc::new(create_refresh_token_task(&config, client.clone()).await?);
 
     let repo_list_refresh_token = refresh_token.clone();
     let repo_list_client = client.clone();

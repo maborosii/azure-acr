@@ -1,5 +1,6 @@
 use crate::{
     resp::{FinalToken, LoginToken, Primary, RefreshToken, Token},
+    setting::Config,
     AUTH_FINAL_TOKEN_PATH, AUTH_LOGIN_TOKEN_PATH, AUTH_REFRESH_TOKEN_PATH, AUTH_SCOPE,
     AZURE_ACR_API_VERSION, LOGIN_URL,
 };
@@ -41,20 +42,12 @@ impl From<&str> for GrantType {
 #[async_trait]
 pub trait Sender {
     type Output: Token;
-    async fn send(
-        &self,
-        config: &crate::setting::Config,
-        client: Arc<reqwest::Client>,
-    ) -> Result<Self::Output>;
+    async fn send(&self, config: &Config, client: Arc<reqwest::Client>) -> Result<Self::Output>;
 }
 #[async_trait]
 impl Sender for Primary {
     type Output = LoginToken;
-    async fn send(
-        &self,
-        config: &crate::setting::Config,
-        client: Arc<reqwest::Client>,
-    ) -> Result<Self::Output> {
+    async fn send(&self, config: &Config, client: Arc<reqwest::Client>) -> Result<Self::Output> {
         let login_url = format!(
             "{}/{}{}",
             LOGIN_URL,
@@ -76,7 +69,6 @@ impl Sender for Primary {
             .json::<LoginToken>()
             .await?;
 
-        // println!("body = {:?}", body);
         Ok(body)
     }
 }
@@ -84,11 +76,7 @@ impl Sender for Primary {
 #[async_trait]
 impl Sender for LoginToken {
     type Output = RefreshToken;
-    async fn send(
-        &self,
-        config: &crate::setting::Config,
-        client: Arc<reqwest::Client>,
-    ) -> Result<Self::Output> {
+    async fn send(&self, config: &Config, client: Arc<reqwest::Client>) -> Result<Self::Output> {
         let params = [
             ("grant_type", GrantType::AccessToken.into()),
             ("access_token", &self.token()[..]),
@@ -108,7 +96,6 @@ impl Sender for LoginToken {
             .await?
             .json::<RefreshToken>()
             .await?;
-        // println!("body = {:?}", body);
 
         Ok(body)
     }
@@ -118,7 +105,7 @@ impl Sender for LoginToken {
 impl RefreshToken {
     pub async fn get_final_token(
         &self,
-        config: &crate::setting::Config,
+        config: &Config,
         client: Arc<reqwest::Client>,
         scope: &str,
     ) -> Result<FinalToken> {
@@ -142,7 +129,6 @@ impl RefreshToken {
             .await?
             .json::<FinalToken>()
             .await?;
-        // println!("body = {:?}", body);
 
         Ok(body)
     }
@@ -152,7 +138,7 @@ impl FinalToken {
     // get data
     pub async fn get_final_data<T>(
         &self,
-        config: &crate::setting::Config,
+        config: &Config,
         client: Arc<reqwest::Client>,
         path: &str,
     ) -> Result<T>
@@ -171,7 +157,6 @@ impl FinalToken {
             .json::<T>()
             .await?;
 
-        // println!("body = {:?}", body);
         Ok(body)
     }
 }
@@ -180,7 +165,7 @@ impl FinalToken {
     // delete data
     pub async fn delete_image_by_tag(
         &self,
-        config: &crate::setting::Config,
+        config: &Config,
         client: Arc<reqwest::Client>,
         path: &str,
     ) -> Result<StatusCode> {

@@ -65,7 +65,7 @@ impl RepositoriesList {
     pub fn repositories(self) -> Vec<String> {
         self.repositories
     }
-    // filter image name which is not container `mark`
+    // drop image name which contains `mark`
     pub fn filter_image_name_by_mark(mut self, mark: &str) -> Self {
         let filter_list: Vec<_> = self
             .repositories
@@ -75,10 +75,28 @@ impl RepositoriesList {
         self.repositories = filter_list;
         self
     }
+    pub fn filter_by_image_rule(mut self, config: Arc<Config>) -> Result<Self> {
+        match &config.filter {
+            None => Err(anyhow::anyhow!("config filter rules is none")),
+            Some(filter) => {
+                let keep_rule = &filter.image_name.keep.rules;
+                match keep_rule {
+                    // if none: return all
+                    None => Ok(self),
+                    Some(rules) => {
+                        for i in rules {
+                            self = self.filter_image_name_by_mark(i.keyword.as_str());
+                        }
+                        Ok(self)
+                    }
+                }
+            }
+        }
+    }
 }
 
 // tag list
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq, Clone)]
 pub struct TagList {
     pub registry: String,
     #[serde(rename(deserialize = "imageName"))]
@@ -87,13 +105,20 @@ pub struct TagList {
 }
 
 impl TagList {
+    pub fn tags(&self) -> String {
+        self.tags
+            .iter()
+            .map(|x| x.clone().name)
+            .collect::<Vec<String>>()
+            .join(",")
+    }
     // sort order by tag's created time desc
     pub fn sort_by_tag_createdtime_desc(mut self) -> Self {
         self.tags
             .sort_by(|a, b| b.created_time.cmp(&a.created_time));
         self
     }
-    // filter tags name which is containing `mark` by its digest
+    // drop tags name which contains `mark` by its digest
     pub fn filter_tag_by_mark(mut self, mark: &str) -> Self {
         // get digest list
         let manifests_list: HashSet<_> = self
@@ -119,10 +144,10 @@ impl TagList {
         match &config.filter {
             None => Err(anyhow::anyhow!("config filter rules is none")),
             Some(filter) => {
-                let rule = &filter.tag.keep;
-                let keep_default = &rule.default;
-                let keep_rule = &rule.rules;
+                let keep_default = &filter.tag.keep.default;
+                let keep_rule = &filter.tag.keep.rules;
                 match (keep_default, keep_rule) {
+                    // if none: do nothing
                     (None, None) => Err(anyhow::anyhow!("tag filter rules is none")),
                     (None, Some(rules)) => {
                         for i in rules {
