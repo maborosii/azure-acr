@@ -1,10 +1,14 @@
 # azure-acr cli-rs
 
-## 配置文件说明
->
-> 命名为： config.toml
+**Supported Feature**
 
-样例文件为 `config.sample.toml`
+* clean iamge in azure acr by the follow config
+
+## Config Explain
+>
+> config file: config.toml
+
+sample config file: `config.sample.toml`
 
 ```toml
 [azure]
@@ -42,4 +46,20 @@ default.num = 20
 keyword = "stable"
 [[filter.tag.keep.rules]]
 keyword = "latest"
+```
+
+## How To Work
+
+1. build binary file
+
+```shell
+cargo build -p acr --release
+```
+
+2. prepare config file(`config.toml`)
+
+3. run the executable binary file
+
+```shell
+./acr
 ```
