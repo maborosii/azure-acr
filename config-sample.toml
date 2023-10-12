@@ -1,0 +1,20 @@
+[azure]
+tenant_id = "xxxxxxxxxxxxxxx"
+
+[acr]
+image_manager_id = "xxxxxxxxxxx"
+image_manager_pwd = "xxxxxxxxx"
+endpoint = "xxxxxx.azurecr.io"
+
+# image name filter
+[[filter.image_name.keep.rules]]
+keyword = "/"
+[[filter.image_name.keep.rules]]
+keyword = "-"
+# tag filter
+[filter.tag.keep]
+default.num = 20
+[[filter.tag.keep.rules]]
+keyword = "stable"
+[[filter.tag.keep.rules]]
+keyword = "latest"
