@@ -22,21 +22,22 @@ endpoint = "xxxxxx.azurecr.io"
 
 # @type: array
 # image name filter 
-# keyword: if the image_name contains this keyword,it won't be deleted
+# keyword: keep the image_name which contains the keyword
 [[filter.image_name.keep.rules]]
 keyword = "/"
 [[filter.image_name.keep.rules]]
 keyword = "-"
 # tag filter
 
-# 1. which contains the filter keyword isn't be deleted
+# 1. tag won't be deleted which contains the filter keyword 
 # 2. the rest tags order by create time desc
 # 3. keep top 'default.num' of the tags processed in step 2, finally the rest tags will be deleted
 [filter.tag.keep]
 default.num = 20
+
 # @type: array
 # tag name filter 
-# keyword: if the tag_name contains this keyword, it won't be deleted
+# keyword: keep the tag which contains this keyword
 [[filter.tag.keep.rules]]
 keyword = "stable"
 [[filter.tag.keep.rules]]
