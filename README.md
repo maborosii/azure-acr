@@ -2,7 +2,7 @@
 
 **Supported Feature**
 
-* clean iamge in azure acr by the follow config
+* clean image in azure acr by the follow config
 
 ## Config Explain
 >
