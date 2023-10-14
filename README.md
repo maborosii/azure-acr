@@ -4,9 +4,9 @@
 
 * clean image in azure acr by the follow config
 
-## Config Explain
->
-> config file: config.toml
+## Configuration
+
+> config file name: config.toml
 
 sample config file: `config.sample.toml`
 
