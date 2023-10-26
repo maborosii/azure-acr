@@ -162,8 +162,8 @@ impl FinalToken {
 }
 
 impl FinalToken {
-    // delete data
-    pub async fn delete_image_by_tag(
+    // delete data by tag or digest
+    pub async fn delete_image_by_tag_or_digest(
         &self,
         config: &Config,
         client: Arc<reqwest::Client>,
@@ -182,4 +182,24 @@ impl FinalToken {
 
         Ok(http_status)
     }
+    // // delete data by digest
+    // pub async fn delete_image_by_digest(
+    //     &self,
+    //     config: &Config,
+    //     client: Arc<reqwest::Client>,
+    //     path: &str,
+    // ) -> Result<StatusCode> {
+    //     let catalog_url = format!("https://{}{}", config.azure_acr_endpoint(), path);
+    //     let authorization = format!("Bearer {}", self.token());
+
+    //     let http_status = client
+    //         .delete(catalog_url)
+    //         .query(&[("api-version", AZURE_ACR_API_VERSION)])
+    //         .header("Authorization", authorization)
+    //         .send()
+    //         .await?
+    //         .status();
+
+    //     Ok(http_status)
+    // }
 }

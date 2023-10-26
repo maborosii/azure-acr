@@ -3,7 +3,10 @@ use anyhow::Result;
 use requester::{Config, Primary, RefreshToken, RepositoriesList, Sender, TagList};
 use reqwest::Client;
 use std::{sync::Arc, thread, time::Duration};
-use utils::{build_delete_tag_path, build_delete_tag_scope, build_tag_path, build_tag_scope};
+use utils::{
+    build_delete_digest_path, build_delete_tag_path, build_delete_tag_scope, build_tag_path,
+    build_tag_scope,
+};
 
 pub async fn create_refresh_token_task(
     config: &Config,
@@ -116,6 +119,8 @@ pub async fn create_delete_tag_list_task(
                     let delete_tag_list_client = delete_tag_list_client.clone();
                     let delete_tag_scope = build_delete_tag_scope(&tag_list.image_name);
                     let delete_tag_path = build_delete_tag_path(&tag_list.image_name, &tag.name);
+                    let delete_digest_path =
+                        build_delete_digest_path(&tag_list.image_name, &tag.digest);
 
                     let _ = tokio::spawn(async move {
                         println!(
@@ -129,6 +134,7 @@ pub async fn create_delete_tag_list_task(
                             delete_tag_list_client,
                             &delete_tag_scope,
                             &delete_tag_path,
+                            &delete_digest_path,
                         )
                         .await;
                         match delete_tag_result {

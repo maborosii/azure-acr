@@ -27,12 +27,18 @@ pub async fn delete_data(
     config: Arc<Config>,
     client: Arc<reqwest::Client>,
     scope: &str,
-    path: &str,
+    tag_path: &str,
+    digest_path: &str,
 ) -> Result<StatusCode> {
-    let body = refresh_token
+    let tag_body = refresh_token
         .get_final_token(&config, client.clone(), scope)
         .await?
-        .delete_image_by_tag(&config, client.clone(), path)
+        .delete_image_by_tag_or_digest(&config, client.clone(), tag_path)
         .await?;
-    Ok(body)
+    let _ = refresh_token
+        .get_final_token(&config, client.clone(), scope)
+        .await?
+        .delete_image_by_tag_or_digest(&config, client.clone(), digest_path)
+        .await?;
+    Ok(tag_body)
 }

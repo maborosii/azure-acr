@@ -34,3 +34,9 @@ pub fn build_delete_tag_scope(image_name: &str) -> String {
 pub fn build_delete_tag_path(image_name: &str, tag: &str) -> String {
     format!("/acr/v1/{}/_tags/{}", image_name, tag)
 }
+
+// api: delete digest for specific image
+// request uri path
+pub fn build_delete_digest_path(image_name: &str, digest: &str) -> String {
+    format!("/v2/{}/manifests/{}", image_name, digest)
+}
