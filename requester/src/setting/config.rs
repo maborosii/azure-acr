@@ -78,12 +78,14 @@ pub struct DefaultRule {
 #[derive(Deserialize)]
 pub struct Rule {
     pub keyword: String,
+    pub num: Option<usize>,
 }
 
 #[cfg(debug_assertions)]
 #[derive(Deserialize, PartialEq, Debug)]
 pub struct Rule {
     pub keyword: String,
+    pub num: Option<usize>,
 }
 
 #[cfg(test)]
@@ -128,17 +130,20 @@ mod tests {
             tag_keep_rule.rules,
             Some(vec![
                 Rule {
-                    keyword: "stable".to_string()
+                    keyword: "stable".to_string(),
+                    num: None,
                 },
                 Rule {
-                    keyword: "latest".to_string()
+                    keyword: "latest".to_string(),
+                    num: None,
                 }
             ])
         );
         assert_eq!(
             image_keep_rule.rules,
             Some(vec![Rule {
-                keyword: "/".to_string()
+                keyword: "/".to_string(),
+                num: None
             }])
         );
     }

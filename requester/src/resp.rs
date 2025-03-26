@@ -79,10 +79,11 @@ impl RepositoriesList {
         match &config.filter {
             None => Err(anyhow::anyhow!("config filter rules is none")),
             Some(filter) => {
-                let keep_rule = &filter.image_name.keep.rules;
+                let keep_rule: &Option<Vec<crate::Rule>> = &filter.image_name.keep.rules;
                 match keep_rule {
                     // if none: return all
                     None => Ok(self),
+                    // rule in `image_name` don't need handle `num`
                     Some(rules) => {
                         for i in rules {
                             self = self.filter_image_name_by_mark(i.keyword.as_str());
@@ -118,7 +119,7 @@ impl TagList {
             .sort_by(|a, b| b.created_time.cmp(&a.created_time));
         self
     }
-    // drop tags name which contains `mark` by its digest
+    // get drop tags name which contains `mark` by its digest
     pub fn filter_tag_by_mark(mut self, mark: &str) -> Self {
         // get digest list
         let manifests_list: HashSet<_> = self
@@ -128,6 +129,29 @@ impl TagList {
             .map(|x| x.clone().digest)
             .collect();
         self.tags.retain(|x| !manifests_list.contains(&x.digest));
+        self
+    }
+    // get drop tags name which contains `mark` and limit `num` by its digest
+    pub fn filter_tag_by_mark_num(mut self, mark: &str, num: usize) -> Self {
+        // get filtered list by `mark`
+        let mut filtered_tag_list: Vec<Tag> = self
+            .tags
+            .clone()
+            .into_iter()
+            .filter(|x| x.name.contains(mark))
+            .collect();
+        // sort
+        filtered_tag_list.sort_by(|a, b| b.created_time.cmp(&a.created_time));
+
+        // take `num` size elements
+        let manifests_list: HashSet<_> = filtered_tag_list
+            .iter()
+            .take(num)
+            .map(|x| x.clone().digest)
+            .collect();
+
+        self.tags.retain(|x| !manifests_list.contains(&x.digest));
+
         self
     }
     // filter tags which is in tag list's [0..`hold`]
@@ -151,7 +175,12 @@ impl TagList {
                     (None, None) => Err(anyhow::anyhow!("tag filter rules is none")),
                     (None, Some(rules)) => {
                         for i in rules {
-                            self = self.filter_tag_by_mark(i.keyword.as_str());
+                            match i.num {
+                                None => self = self.filter_tag_by_mark(i.keyword.as_str()),
+                                Some(n) => {
+                                    self = self.filter_tag_by_mark_num(i.keyword.as_str(), n)
+                                }
+                            }
                         }
                         Ok(self)
                     }
@@ -163,7 +192,12 @@ impl TagList {
                     }
                     (Some(hold), Some(rules)) => {
                         for i in rules {
-                            self = self.filter_tag_by_mark(i.keyword.as_str());
+                            match i.num {
+                                None => self = self.filter_tag_by_mark(i.keyword.as_str()),
+                                Some(n) => {
+                                    self = self.filter_tag_by_mark_num(i.keyword.as_str(), n)
+                                }
+                            }
                         }
                         self = self
                             .sort_by_tag_createdtime_desc()
